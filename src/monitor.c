@@ -180,15 +180,54 @@ void lista_liberar(NoLeitura **inicio) {
     }
 }
 bool salvar_leituras(const char *caminho, const NoLeitura *inicio) {
-    /* ETAPA 04: grave uma leitura por linha e feche o arquivo. */
-    (void)caminho;
-    (void)inicio;
-    return false;
+     if (caminho == NULL) {
+        return false;
+    }
+
+    FILE *arquivo = fopen(caminho, "w");
+    if (arquivo == NULL) {
+        return false;
+    }
+
+    const NoLeitura *atual = inicio;
+    while (atual != NULL) {
+        if (fprintf(arquivo, "%.17g\n", atual->valor) < 0) {
+            fclose(arquivo);
+            return false;
+        }
+        atual = atual->proximo;
+    }
+
+    return fclose(arquivo) == 0;
 }
 
 bool carregar_leituras(const char *caminho, NoLeitura **inicio) {
-    /* ETAPA 04: leia as linhas, reconstrua a lista e feche o arquivo. */
-    (void)caminho;
-    (void)inicio;
-    return false;
+    if (caminho == NULL || inicio == NULL) {
+        return false;
+    }
+
+    FILE *arquivo = fopen(caminho, "r");
+    if (arquivo == NULL) {
+        return false;
+    }
+
+    NoLeitura *temporaria = NULL;
+    double valor;
+
+    while (fscanf(arquivo, "%lf", &valor) == 1) {
+        if (!lista_adicionar(&temporaria, valor)) {
+            lista_liberar(&temporaria);
+            fclose(arquivo);
+            return false;
+        }
+    }
+
+    if (ferror(arquivo) || fclose(arquivo) != 0) {
+        lista_liberar(&temporaria);
+        return false;
+    }
+
+    lista_liberar(inicio);
+    *inicio = temporaria;
+    return true;
 }
